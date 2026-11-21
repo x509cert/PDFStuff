@@ -284,6 +284,10 @@ jobs:
         if: runner.os == 'Windows' && (env.PROJECTS == 'all' || contains(env.PROJECTS, 'tests/Broadside.Viewer.Wpf.Tests/'))
         run: dotnet test --project tests/Broadside.Viewer.Wpf.Tests -c Release --no-build --minimum-expected-tests 1 --results-directory artifacts/test-results -- --report-xunit-trx
 
+      - name: Test Broadside Reader (Windows)
+        if: runner.os == 'Windows' && (env.PROJECTS == 'all' || contains(env.PROJECTS, 'tests/Broadside.Reader.Tests/'))
+        run: dotnet test --project tests/Broadside.Reader.Tests -c Release --no-build --minimum-expected-tests 1 --results-directory artifacts/test-results -- --report-xunit-trx
+
       - name: Test that every corpus page renders to the same bytes twice (narrowed pull request, Windows and macOS)
         # The cross-platform render-hash test (RenderHashTests, issue #233), the one core test a narrowed pull request runs on these
         # two OSes; render-determinism.yml compares the hashes across them.
@@ -615,6 +619,8 @@ jobs:
           dotnet format bench/Broadside.Rendering.Direct2D.Benchmarks/Broadside.Rendering.Direct2D.Benchmarks.csproj --verify-no-changes
           dotnet format tests/Broadside.Viewer.Wpf.Tests/Broadside.Viewer.Wpf.Tests.csproj --verify-no-changes
           dotnet format samples/Broadside.Viewer.Wpf.Sample/Broadside.Viewer.Wpf.Sample.csproj --verify-no-changes
+          dotnet format apps/Broadside.Reader/Broadside.Reader.csproj --verify-no-changes
+          dotnet format tests/Broadside.Reader.Tests/Broadside.Reader.Tests.csproj --verify-no-changes
           dotnet format samples/Broadside.BuilderSamples/Broadside.BuilderSamples.csproj --verify-no-changes
           dotnet format tests/Broadside.Viewer.WinUI.UITests/Broadside.Viewer.WinUI.UITests.csproj --verify-no-changes
 

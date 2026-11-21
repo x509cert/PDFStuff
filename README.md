@@ -127,6 +127,10 @@ Drop a PDF viewer into your app. Every viewer scrolls and zooms smoothly, and su
 | Avalonia | `Broadside.Viewer.Avalonia` | Windows, macOS, Linux |
 | Uno Platform | `Broadside.Viewer.Uno` | Windows, macOS, Linux, browser |
 
+For a stand-alone Windows application, [Broadside Reader](apps/Broadside.Reader/README.md)
+provides a WPF desktop shell with file opening, search, navigation, form saving and
+portable self-contained builds.
+
 Blazor:
 
 ```razor

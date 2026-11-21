@@ -1,0 +1,115 @@
+<Window x:Class="Broadside.Reader.MainWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewer="clr-namespace:Broadside.Viewer.Wpf;assembly=Broadside.Viewer.Wpf"
+        Title="Broadside Reader" MinWidth="640" MinHeight="480"
+        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+        AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop"
+        AutomationProperties.AutomationId="ReaderWindow">
+    <DockPanel>
+        <Menu x:Name="MainMenu" DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Command="Open" />
+                <MenuItem x:Name="RecentMenu" Header="_Recent files" />
+                <Separator />
+                <MenuItem Header="_Save" Command="Save" />
+                <MenuItem Header="Save _As..." Command="SaveAs" />
+                <MenuItem Header="_Close document" Command="Close" />
+                <Separator />
+                <MenuItem Header="_Exit" Click="OnExit" />
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Copy selection" Command="Copy" />
+                <MenuItem Header="Select _all" Command="SelectAll" />
+                <MenuItem Header="_Find..." Command="Find" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem x:Name="SidebarMenu" Header="_Outline and thumbnails" IsCheckable="True" Click="OnSidebar" />
+                <MenuItem x:Name="DarkMenu" Header="_Dark pages" IsCheckable="True" Click="OnDarkMode" />
+                <Separator />
+                <MenuItem Header="Fit _width" Click="OnFitWidth" />
+                <MenuItem Header="Fit _page" Click="OnFitPage" />
+                <MenuItem Header="_Actual size" Click="OnActualSize" />
+                <MenuItem x:Name="LayoutMenu" Header="_Page layout" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="Document _properties and diagnostics" Click="OnProperties" />
+                <MenuItem Header="_About" Click="OnAbout" />
+            </MenuItem>
+        </Menu>
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar x:Name="Toolbar">
+                <Button Content="Open" Command="Open" AutomationProperties.AutomationId="OpenFile" />
+                <Button Content="Save" Command="Save" AutomationProperties.AutomationId="SaveFile" />
+                <Separator />
+                <Button Content="Previous" Click="OnPreviousPage" ToolTip="Previous page" />
+                <TextBox x:Name="PageNumber" Width="48" KeyDown="OnPageKey" ToolTip="Page number (Enter to go)"
+                         AutomationProperties.Name="Page number" AutomationProperties.AutomationId="PageNumber" />
+                <TextBlock x:Name="PageCount" VerticalAlignment="Center" Margin="4,0" />
+                <Button Content="Next" Click="OnNextPage" ToolTip="Next page" />
+                <Separator />
+                <Button Content="-" Click="OnZoomOut" ToolTip="Zoom out" />
+                <Button Content="+" Click="OnZoomIn" ToolTip="Zoom in" AutomationProperties.AutomationId="ZoomIn" />
+                <Button Content="Fit width" Click="OnFitWidth" />
+                <Button Content="Fit page" Click="OnFitPage" />
+                <Separator />
+                <TextBox x:Name="SearchBox" Width="170" KeyDown="OnSearchKey" ToolTip="Find text (Enter to search)"
+                         AutomationProperties.Name="Find text" AutomationProperties.AutomationId="SearchBox" />
+                <Button Content="Find" Click="OnFind" AutomationProperties.AutomationId="Find" />
+                <Button Content="Previous match" Click="OnPreviousMatch" />
+                <Button Content="Next match" Click="OnNextMatch" />
+                <TextBlock x:Name="SearchStatus" VerticalAlignment="Center" Margin="6,0"
+                           AutomationProperties.AutomationId="SearchStatus" />
+            </ToolBar>
+        </ToolBarTray>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem><TextBlock x:Name="PageStatus" AutomationProperties.AutomationId="PageStatus" /></StatusBarItem>
+            <StatusBarItem><TextBlock x:Name="ZoomStatus" AutomationProperties.AutomationId="ZoomStatus" /></StatusBarItem>
+            <StatusBarItem><TextBlock x:Name="Message" Text="Ready" AutomationProperties.AutomationId="Message" /></StatusBarItem>
+        </StatusBar>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="SidebarColumn" Width="220" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TabControl x:Name="Sidebar" Margin="4" SelectionChanged="OnSidebarTab">
+                <TabItem Header="Outline">
+                    <TreeView x:Name="OutlineTree" SelectedItemChanged="OnOutlineSelected"
+                              AutomationProperties.Name="Document outline">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </TabItem>
+                <TabItem Header="Pages">
+                    <ListBox x:Name="PagesList" SelectionChanged="OnThumbnailSelected"
+                             VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                             ScrollViewer.CanContentScroll="True" AutomationProperties.Name="Page thumbnails">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4" Width="160">
+                                    <Image Source="{Binding Image}" Height="140" Stretch="Uniform" />
+                                    <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </TabItem>
+            </TabControl>
+            <viewer:PdfView x:Name="Viewer" Grid.Column="1" AutomationProperties.AutomationId="Viewer"
+                            AutomationProperties.Name="PDF document" />
+            <Border x:Name="Welcome" Grid.Column="1" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                    <TextBlock Text="Broadside Reader" FontSize="32" Margin="0,0,0,16" HorizontalAlignment="Center" />
+                    <TextBlock Text="Open a PDF or drop a file here." FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                    <Button Content="Open a PDF..." Command="Open" Padding="24,10" HorizontalAlignment="Center"
+                            AutomationProperties.AutomationId="WelcomeOpen" />
+                    <TextBlock Text="Ctrl+O to open   Ctrl+F to find   Ctrl+S to save" Margin="0,20,0,0" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

@@ -41,6 +41,8 @@ windows_set=(
   src/Broadside.Viewer.Wpf/Broadside.Viewer.Wpf.csproj
   tests/Broadside.Viewer.Wpf.Tests/Broadside.Viewer.Wpf.Tests.csproj
   samples/Broadside.Viewer.Wpf.Sample/Broadside.Viewer.Wpf.Sample.csproj
+  apps/Broadside.Reader/Broadside.Reader.csproj
+  tests/Broadside.Reader.Tests/Broadside.Reader.Tests.csproj
   tests/Broadside.Rendering.Tests/Broadside.Rendering.Tests.csproj
 )
 macos_set=(
@@ -60,6 +62,8 @@ format_extra=(
   bench/Broadside.Rendering.Direct2D.Benchmarks/Broadside.Rendering.Direct2D.Benchmarks.csproj
   tests/Broadside.Viewer.Wpf.Tests/Broadside.Viewer.Wpf.Tests.csproj
   samples/Broadside.Viewer.Wpf.Sample/Broadside.Viewer.Wpf.Sample.csproj
+  apps/Broadside.Reader/Broadside.Reader.csproj
+  tests/Broadside.Reader.Tests/Broadside.Reader.Tests.csproj
   samples/Broadside.BuilderSamples/Broadside.BuilderSamples.csproj
   tests/Broadside.Viewer.WinUI.UITests/Broadside.Viewer.WinUI.UITests.csproj
 )
