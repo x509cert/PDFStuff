@@ -7,7 +7,9 @@
     <InvariantGlobalization>false</InvariantGlobalization>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Product>Broadside Reader</Product>
+    <AssemblyName>SneakyPdf</AssemblyName>
+    <RootNamespace>Broadside.Reader</RootNamespace>
+    <Product>SneakyPdf</Product>
     <Description>A stand-alone PDF reader for Windows.</Description>
   </PropertyGroup>
   <ItemGroup>

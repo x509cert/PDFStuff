@@ -124,5 +124,19 @@ internal sealed class TestDirectory : IDisposable
         return destination;
     }
 
-    public void Dispose() => Directory.Delete(_path, recursive: true);
+    public void Dispose()
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                Directory.Delete(_path, recursive: true);
+                return;
+            }
+            catch (IOException) when (attempt < 9)
+            {
+                Thread.Sleep(100);
+            }
+        }
+    }
 }

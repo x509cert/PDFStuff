@@ -3,6 +3,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -24,6 +27,7 @@ internal sealed partial class MainWindow : Window, IDisposable
     private bool _closing;
     private bool _closePending;
     private bool _revealFirst;
+    private bool _updatingScroll;
 
     public MainWindow(string? path)
     {
@@ -64,7 +68,11 @@ internal sealed partial class MainWindow : Window, IDisposable
         Viewer.StateChanged += (_, e) => ShowState(e.State);
         Viewer.Error += (_, e) => Report("Document: " + e.Exception.Message);
         Viewer.ActionRequested += OnActionRequested;
-        _searchTimer.Tick += (_, _) => ShowSearch();
+        _searchTimer.Tick += (_, _) =>
+        {
+            ShowSearch();
+            UpdateDocumentScroll();
+        };
         _searchTimer.Start();
         Closing += OnClosing;
         Loaded += async (_, _) =>
@@ -98,7 +106,7 @@ internal sealed partial class MainWindow : Window, IDisposable
 #pragma warning restore CA1031
         {
             Report(exception.Message);
-            MessageBox.Show(this, exception.Message, "Broadside Reader", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, exception.Message, "SneakyPdf", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -114,6 +122,7 @@ internal sealed partial class MainWindow : Window, IDisposable
         Viewer.IsEnabled = !value;
         Sidebar.IsEnabled = !value;
         AllowDrop = !value;
+        UpdateDocumentScroll();
         CommandManager.InvalidateRequerySuggested();
     }
 
@@ -192,8 +201,12 @@ internal sealed partial class MainWindow : Window, IDisposable
         {
             var dialog = new SaveFileDialog
             {
-                Filter = "PDF documents (*.pdf)|*.pdf", DefaultExt = ".pdf", AddExtension = true, OverwritePrompt = true,
-                FileName = Path.GetFileNameWithoutExtension(file.Path) + "-edited.pdf", InitialDirectory = Path.GetDirectoryName(file.Path),
+                Filter = "PDF documents (*.pdf)|*.pdf",
+                DefaultExt = ".pdf",
+                AddExtension = true,
+                OverwritePrompt = true,
+                FileName = Path.GetFileNameWithoutExtension(file.Path) + "-edited.pdf",
+                InitialDirectory = Path.GetDirectoryName(file.Path),
             };
             if (dialog.ShowDialog(this) != true)
             {
@@ -283,7 +296,7 @@ internal sealed partial class MainWindow : Window, IDisposable
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                MessageBox.Show(this, "Preferences could not be saved: " + exception.Message, "Broadside Reader");
+                MessageBox.Show(this, "Preferences could not be saved: " + exception.Message, "SneakyPdf");
             }
 
             await ReleaseDocumentAsync();
@@ -323,6 +336,38 @@ internal sealed partial class MainWindow : Window, IDisposable
         }
 
         _navigation.ShowPage(state.PageIndex, Sidebar.SelectedIndex == 1 && _settings.SidebarVisible);
+        UpdateDocumentScroll();
+    }
+
+    private IScrollProvider? ScrollProvider =>
+        UIElementAutomationPeer.CreatePeerForElement(Viewer).GetPattern(PatternInterface.Scroll) as IScrollProvider;
+
+    private void UpdateDocumentScroll()
+    {
+        _updatingScroll = true;
+        try
+        {
+            IScrollProvider? provider = ScrollProvider;
+            bool scrollable = provider?.VerticallyScrollable == true;
+            DocumentScroll.IsEnabled = scrollable && !_busy;
+            double view = scrollable ? Math.Clamp(provider!.VerticalViewSize, 0, 100) : 100;
+            DocumentScroll.ViewportSize = view < 100 ? 100 * view / (100 - view) : 100;
+            DocumentScroll.LargeChange = Math.Min(100, DocumentScroll.ViewportSize);
+            DocumentScroll.SmallChange = Math.Min(100, DocumentScroll.ViewportSize / 10);
+            DocumentScroll.Value = scrollable ? Math.Clamp(provider!.VerticalScrollPercent, 0, 100) : 0;
+        }
+        finally
+        {
+            _updatingScroll = false;
+        }
+    }
+
+    private void OnDocumentScrollChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!_updatingScroll && !_busy)
+        {
+            ScrollProvider?.SetScrollPercent(ScrollPatternIdentifiers.NoScroll, e.NewValue);
+        }
     }
 
     private AnnotationLayer? _observedAnnotations;
@@ -334,7 +379,7 @@ internal sealed partial class MainWindow : Window, IDisposable
         Viewer.Dispose();
     }
 
-    private void UpdateTitle() => Title = _file is null ? "Broadside Reader" : $"{Path.GetFileName(_file.Path)}{(_file.IsDirty ? " *" : "")} - Broadside Reader";
+    private void UpdateTitle() => Title = _file is null ? "SneakyPdf" : $"{Path.GetFileName(_file.Path)}{(_file.IsDirty ? " *" : "")} - SneakyPdf";
 
     private void Report(string message) => Message.Text = message;
 
@@ -499,7 +544,7 @@ internal sealed partial class MainWindow : Window, IDisposable
     });
 
     private void OnAbout(object sender, RoutedEventArgs e) => MessageBox.Show(this,
-        "Broadside Reader\nA PDF reader for Windows, built with the managed Broadside PDF library.\n\nMIT licensed. See LICENSE.txt beside the executable.\nJavaScript, XFA rendering, OCR and printing are not supported.", "About Broadside Reader");
+        "SneakyPdf\nA PDF reader for Windows, built with the managed Broadside PDF library.\n\nMIT licensed. See LICENSE.txt beside the executable.\nJavaScript, XFA rendering, OCR and printing are not supported.", "About SneakyPdf");
 
     private void OnSidebar(object sender, RoutedEventArgs e) { _settings.SidebarVisible = SidebarMenu.IsChecked; ApplyPreferences(); _navigation.ShowPage(Viewer.State.PageIndex, Sidebar.SelectedIndex == 1 && _settings.SidebarVisible); }
     private void OnDarkMode(object sender, RoutedEventArgs e) { _settings.DarkMode = DarkMenu.IsChecked; ApplyPreferences(); _navigation.RefreshThumbnails(); }

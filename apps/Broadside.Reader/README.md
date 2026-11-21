@@ -1,10 +1,11 @@
-# Broadside Reader for Windows
+# SneakyPdf for Windows
 
 A stand-alone WPF application using the Broadside viewer control and managed
 software rasterizer. It supports:
 
 - Local PDF files through a file picker, drag-and-drop, or a command-line path.
 - Continuous, single-page, two-page and horizontal page layouts, fit modes and zoom.
+- A right-side scrollbar with a draggable thumb, page steps and synchronized scroll position.
 - Text selection and copy, background search, outlines, page labels and thumbnails.
 - AcroForm filling, Save and Save As, and an unsaved-change prompt.
 - Password-protected documents, smart dark pages and document diagnostics.
@@ -31,17 +32,17 @@ next match, and Shift+Enter moves to the previous match.
 ## Portable distribution
 
 ```powershell
-.\tools\Publish-Reader.ps1
+.\tools\Publish-SneakyPdf.ps1
 ```
 
 The script publishes a self-contained Windows x64 app and creates
-`artifacts\reader\Broadside.Reader-win-x64.zip`. Extract the archive and run
-`win-x64\Broadside.Reader.exe`; keep all files together. The destination machine
+`artifacts\sneakypdf\SneakyPdf-win-x64.zip`. Extract the archive and run
+`win-x64\SneakyPdf.exe`; keep all files together. The destination machine
 does not need a separately installed .NET runtime. Use `-Runtime win-arm64` to
 publish for Windows on ARM. The build is not trimmed or Native AOT, and the
 executable is not code-signed.
 
-Settings are stored in `%LOCALAPPDATA%\Broadside\Reader\settings.json`. They
+For compatibility, settings remain in `%LOCALAPPDATA%\Broadside\Reader\settings.json`. They
 include recent file paths but never passwords. Clear recent files from the File
 menu. `BROADSIDE_READER_SETTINGS` can select a different settings file, including
 for isolated tests.
@@ -76,7 +77,7 @@ UI Automation tests require an interactive Windows desktop. To test the portable
 app rather than its development build:
 
 ```powershell
-$env:BROADSIDE_READER_EXE = "$PWD\artifacts\reader\win-x64\Broadside.Reader.exe"
+$env:BROADSIDE_READER_EXE = "$PWD\artifacts\sneakypdf\win-x64\SneakyPdf.exe"
 dotnet test --project tests\Broadside.Reader.Tests
 ```
 

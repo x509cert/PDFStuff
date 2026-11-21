@@ -3,7 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:viewer="clr-namespace:Broadside.Viewer.Wpf;assembly=Broadside.Viewer.Wpf"
-        Title="Broadside Reader" MinWidth="640" MinHeight="480"
+        Title="SneakyPdf" MinWidth="640" MinHeight="480"
         Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
         AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop"
         AutomationProperties.AutomationId="ReaderWindow">
@@ -72,6 +72,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="SidebarColumn" Width="220" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TabControl x:Name="Sidebar" Margin="4" SelectionChanged="OnSidebarTab">
                 <TabItem Header="Outline">
@@ -101,9 +102,14 @@
             </TabControl>
             <viewer:PdfView x:Name="Viewer" Grid.Column="1" AutomationProperties.AutomationId="Viewer"
                             AutomationProperties.Name="PDF document" />
+            <ScrollBar x:Name="DocumentScroll" Grid.Column="2" Orientation="Vertical"
+                       Minimum="0" Maximum="100" IsEnabled="False" Focusable="False"
+                       ValueChanged="OnDocumentScrollChanged" ToolTip="Scroll through the document"
+                       AutomationProperties.Name="Document scroll position"
+                       AutomationProperties.AutomationId="DocumentScroll" />
             <Border x:Name="Welcome" Grid.Column="1" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
-                    <TextBlock Text="Broadside Reader" FontSize="32" Margin="0,0,0,16" HorizontalAlignment="Center" />
+                    <TextBlock Text="SneakyPdf" FontSize="32" Margin="0,0,0,16" HorizontalAlignment="Center" />
                     <TextBlock Text="Open a PDF or drop a file here." FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,16" />
                     <Button Content="Open a PDF..." Command="Open" Padding="24,10" HorizontalAlignment="Center"
                             AutomationProperties.AutomationId="WelcomeOpen" />

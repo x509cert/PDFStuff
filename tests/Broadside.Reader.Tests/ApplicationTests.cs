@@ -18,6 +18,7 @@ public sealed class ApplicationTests
         {
             AutomationElement window = await WaitAsync(() => MainWindow(app));
             await WaitTextAsync(window, "PageStatus", value => value == "Page 1 of 1");
+            Assert.EndsWith(" - SneakyPdf", window.Current.Name, StringComparison.Ordinal);
             string before = Text(window, "ZoomStatus");
             Invoke(window, "ZoomIn");
             await WaitTextAsync(window, "ZoomStatus", value => value != before);
@@ -50,8 +51,59 @@ public sealed class ApplicationTests
         try
         {
             AutomationElement window = await WaitAsync(() => MainWindow(app));
+            Assert.Equal("SneakyPdf", window.Current.Name);
             Assert.False(Find(window, "WelcomeOpen").Current.IsOffscreen);
             Assert.False(Find(window, "SaveFile").Current.IsEnabled);
+            Assert.False(Find(window, "DocumentScroll").Current.IsEnabled);
+            ((WindowPattern)window.GetCurrentPattern(WindowPattern.Pattern)).Close();
+            await app.WaitForExitAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken);
+            Assert.Equal(0, app.ExitCode);
+        }
+        finally
+        {
+            if (!app.HasExited)
+            {
+                app.Kill(entireProcessTree: true);
+                await app.WaitForExitAsync(TestContext.Current.CancellationToken);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task The_right_scrollbar_moves_between_pages_and_follows_other_scrolling()
+    {
+        using var directory = new TestDirectory();
+        string source = directory.PathOf("six-pages.pdf");
+        await File.WriteAllBytesAsync(source, ManyPagesDocument.CreateWithText(6), TestContext.Current.CancellationToken);
+        using Process app = Start(directory, source);
+        try
+        {
+            AutomationElement window = await WaitAsync(() => MainWindow(app));
+            await WaitTextAsync(window, "PageStatus", value => value == "Page 1 of 6");
+            AutomationElement scrollbar = await WaitAsync(() =>
+            {
+                AutomationElement control = Find(window, "DocumentScroll");
+                return control.Current.IsEnabled ? control : null;
+            });
+            AutomationElement viewer = Find(window, "Viewer");
+            Assert.True(scrollbar.Current.BoundingRectangle.Left >= viewer.Current.BoundingRectangle.Right - 1);
+            var position = (RangeValuePattern)scrollbar.GetCurrentPattern(RangeValuePattern.Pattern);
+            var scroll = (ScrollPattern)viewer.GetCurrentPattern(ScrollPattern.Pattern);
+
+            position.SetValue(100);
+            await WaitTextAsync(window, "PageStatus", value => value == "Page 6 of 6");
+            position.SetValue(0);
+            await WaitTextAsync(window, "PageStatus", value => value == "Page 1 of 6");
+
+            scroll.SetScrollPercent(ScrollPattern.NoScroll, 50);
+            await WaitAsync(() => Math.Abs(position.Current.Value - 50) < 0.01 ? scrollbar : null);
+            position.SetValue(75);
+            await WaitAsync(() => Math.Abs(scroll.Current.VerticalScrollPercent - 75) < 0.01 ? viewer : null);
+            string zoom = Text(window, "ZoomStatus");
+            Invoke(window, "ZoomIn");
+            await WaitTextAsync(window, "ZoomStatus", value => value != zoom);
+            await WaitAsync(() => Math.Abs(position.Current.Value - scroll.Current.VerticalScrollPercent) < 0.01 ? scrollbar : null);
+
             ((WindowPattern)window.GetCurrentPattern(WindowPattern.Pattern)).Close();
             await app.WaitForExitAsync(TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken);
             Assert.Equal(0, app.ExitCode);
@@ -69,7 +121,7 @@ public sealed class ApplicationTests
     private static Process Start(TestDirectory directory, string? path = null)
     {
         string executable = Environment.GetEnvironmentVariable("BROADSIDE_READER_EXE")
-            ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "Broadside.Reader", "release", "Broadside.Reader.exe"));
+            ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "Broadside.Reader", "release", "SneakyPdf.exe"));
         Assert.True(File.Exists(executable), "Build the app first, or set BROADSIDE_READER_EXE to the published executable.");
         var start = new ProcessStartInfo(executable) { WorkingDirectory = directory.PathOf(), UseShellExecute = false };
         start.Environment["BROADSIDE_READER_SETTINGS"] = directory.PathOf("settings.json");

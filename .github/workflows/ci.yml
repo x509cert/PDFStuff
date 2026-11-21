@@ -284,7 +284,7 @@ jobs:
         if: runner.os == 'Windows' && (env.PROJECTS == 'all' || contains(env.PROJECTS, 'tests/Broadside.Viewer.Wpf.Tests/'))
         run: dotnet test --project tests/Broadside.Viewer.Wpf.Tests -c Release --no-build --minimum-expected-tests 1 --results-directory artifacts/test-results -- --report-xunit-trx
 
-      - name: Test Broadside Reader (Windows)
+      - name: Test SneakyPdf (Windows)
         if: runner.os == 'Windows' && (env.PROJECTS == 'all' || contains(env.PROJECTS, 'tests/Broadside.Reader.Tests/'))
         run: dotnet test --project tests/Broadside.Reader.Tests -c Release --no-build --minimum-expected-tests 1 --results-directory artifacts/test-results -- --report-xunit-trx
 
