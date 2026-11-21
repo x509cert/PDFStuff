@@ -91,6 +91,12 @@ samples/Broadside.Viewer.Wpf.Sample/Broadside.Viewer.Wpf.Sample.csproj' full=fal
   "windows=samples/Broadside.Viewer.Wpf.Sample/Broadside.Viewer.Wpf.Sample.csproj src/Broadside.Viewer.Wpf/Broadside.Viewer.Wpf.csproj tests/Broadside.Viewer.Wpf.Tests/Broadside.Viewer.Wpf.Tests.csproj" \
   macos= format=true fuzz=false blazor=false uno=false maui=false winui=false avalonia=false aot=false
 
+check "reader only" pull_request spec/33-broadside-v1 x "apps/Broadside.Reader/MainWindow.xaml.cs" $'apps/Broadside.Reader/Broadside.Reader.csproj
+tests/Broadside.Reader.Tests/Broadside.Reader.Tests.csproj' full=false linux= macos= \
+  "windows=apps/Broadside.Reader/Broadside.Reader.csproj tests/Broadside.Reader.Tests/Broadside.Reader.Tests.csproj" \
+  "format_projects=apps/Broadside.Reader/Broadside.Reader.csproj tests/Broadside.Reader.Tests/Broadside.Reader.Tests.csproj" \
+  format=true fuzz=false blazor=false uno=false maui=false winui=false avalonia=false aot=false
+
 core=$(cd "${root}" && sed -n 's/^ *"\([^"]*\.csproj\)",\{0,1\}$/\1/p' Broadside.Core.slnf)
 core+=$'\ntests/Broadside.Fuzz/Broadside.Fuzz.csproj
 tests/Broadside.Rendering.CoreGraphics.Tests/Broadside.Rendering.CoreGraphics.Tests.csproj
