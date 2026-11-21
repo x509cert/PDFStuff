@@ -9,13 +9,15 @@
         AutomationProperties.AutomationId="ReaderWindow">
     <DockPanel>
         <Menu x:Name="MainMenu" DockPanel.Dock="Top">
-            <MenuItem Header="_File">
+            <MenuItem Header="_File" AutomationProperties.AutomationId="FileMenu">
                 <MenuItem Header="_Open..." Command="Open" />
                 <MenuItem x:Name="RecentMenu" Header="_Recent files" />
                 <Separator />
                 <MenuItem Header="_Save" Command="Save" />
                 <MenuItem Header="Save _As..." Command="SaveAs" />
                 <MenuItem Header="_Close document" Command="Close" />
+                <Separator />
+                <MenuItem Header="_Print..." Command="Print" AutomationProperties.AutomationId="PrintFile" />
                 <Separator />
                 <MenuItem Header="_Exit" Click="OnExit" />
             </MenuItem>
@@ -88,7 +90,9 @@
                 <TabItem Header="Pages">
                     <ListBox x:Name="PagesList" SelectionChanged="OnThumbnailSelected"
                              VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                             ScrollViewer.CanContentScroll="True" AutomationProperties.Name="Page thumbnails">
+                             VirtualizingPanel.ScrollUnit="Item" ScrollViewer.CanContentScroll="True"
+                             ScrollViewer.ScrollChanged="OnThumbnailsScrolled"
+                             AutomationProperties.Name="Page thumbnails" AutomationProperties.AutomationId="PagesList">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="4" Width="160">
@@ -113,7 +117,7 @@
                     <TextBlock Text="Open a PDF or drop a file here." FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,16" />
                     <Button Content="Open a PDF..." Command="Open" Padding="24,10" HorizontalAlignment="Center"
                             AutomationProperties.AutomationId="WelcomeOpen" />
-                    <TextBlock Text="Ctrl+O to open   Ctrl+F to find   Ctrl+S to save" Margin="0,20,0,0" HorizontalAlignment="Center" />
+                    <TextBlock Text="Ctrl+O to open   Ctrl+F to find   Ctrl+S to save   Ctrl+P to print" Margin="0,20,0,0" HorizontalAlignment="Center" />
                 </StackPanel>
             </Border>
         </Grid>

@@ -10,5 +10,6 @@
     <ProjectReference Include="../Broadside.TestSupport/Broadside.TestSupport.csproj" />
     <PackageReference Include="xunit.v3" />
     <Using Include="System.IO" />
+    <Compile Include="../Broadside.Viewer.Wpf.Tests/Sta.cs" Link="Sta.cs" />
   </ItemGroup>
 </Project>

@@ -60,6 +60,7 @@ internal sealed partial class MainWindow : Window, IDisposable
         Bind(ApplicationCommands.Save, async () => await SaveAsync(false), true);
         Bind(ApplicationCommands.SaveAs, async () => await SaveAsync(true), true);
         Bind(ApplicationCommands.Close, CloseDocumentAsync, true);
+        Bind(ApplicationCommands.Print, PrintAsync, true);
         Bind(ApplicationCommands.Copy, async () => await Viewer.CopySelectionAsync(), true);
         Bind(ApplicationCommands.SelectAll, () => { Viewer.Selection?.SelectAll(); return Task.CompletedTask; }, true);
         Bind(ApplicationCommands.Find, () => { SearchBox.Focus(); SearchBox.SelectAll(); return Task.CompletedTask; }, true);
@@ -236,6 +237,53 @@ internal sealed partial class MainWindow : Window, IDisposable
         MessageBoxResult answer = MessageBox.Show(this, "Save changes before closing this document?", "Unsaved changes",
             MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         return answer == MessageBoxResult.No || (answer == MessageBoxResult.Yes && await SaveAsync(false));
+    }
+
+    private Task PrintAsync()
+    {
+        if (_file is not { } file)
+        {
+            return Task.CompletedTask;
+        }
+
+        Viewer.Forms?.Commit();
+        var dialog = new PrintDialog
+        {
+            UserPageRangeEnabled = true,
+            CurrentPageEnabled = true,
+            MinPage = 1,
+            MaxPage = (uint)file.Session.PageCount,
+            PageRange = new PageRange(1, file.Session.PageCount),
+        };
+        if (dialog.ShowDialog() != true)
+        {
+            return Task.CompletedTask;
+        }
+
+        int first = 0;
+        int last = file.Session.PageCount - 1;
+        if (dialog.PageRangeSelection == PageRangeSelection.UserPages)
+        {
+            first = Math.Clamp(dialog.PageRange.PageFrom - 1, 0, last);
+            last = Math.Clamp(dialog.PageRange.PageTo - 1, first, last);
+        }
+        else if (dialog.PageRangeSelection == PageRangeSelection.CurrentPage)
+        {
+            first = last = Math.Clamp(Viewer.State.PageIndex, 0, last);
+        }
+
+        using var queue = dialog.PrintQueue;
+        var capabilities = queue.GetPrintCapabilities(dialog.PrintTicket);
+        var size = new Size(capabilities.OrientedPageMediaWidth ?? dialog.PrintableAreaWidth,
+            capabilities.OrientedPageMediaHeight ?? dialog.PrintableAreaHeight);
+        Rect area = capabilities.PageImageableArea is { } imageable
+            ? new Rect(imageable.OriginWidth, imageable.OriginHeight, imageable.ExtentWidth, imageable.ExtentHeight)
+            : new Rect(size);
+        var paginator = new PdfPrintPaginator(file.Session, size, area, first, last);
+        Report("Printing...");
+        dialog.PrintDocument(paginator, Path.GetFileName(file.Path) + " - SneakyPdf");
+        Report("Sent to printer.");
+        return Task.CompletedTask;
     }
 
     private async Task CloseDocumentAsync()
@@ -544,7 +592,15 @@ internal sealed partial class MainWindow : Window, IDisposable
     });
 
     private void OnAbout(object sender, RoutedEventArgs e) => MessageBox.Show(this,
-        "SneakyPdf\nA PDF reader for Windows, built with the managed Broadside PDF library.\n\nMIT licensed. See LICENSE.txt beside the executable.\nJavaScript, XFA rendering, OCR and printing are not supported.", "About SneakyPdf");
+        "SneakyPdf\nA PDF reader for Windows, built with the managed Broadside PDF library.\n\nMIT licensed. See LICENSE.txt beside the executable.\nJavaScript, XFA rendering and OCR are not supported.", "About SneakyPdf");
+
+    private void OnThumbnailsScrolled(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.OriginalSource is ScrollViewer scroll)
+        {
+            _navigation.ShowThumbnails((int)Math.Floor(scroll.VerticalOffset), (int)Math.Ceiling(scroll.ViewportHeight));
+        }
+    }
 
     private void OnSidebar(object sender, RoutedEventArgs e) { _settings.SidebarVisible = SidebarMenu.IsChecked; ApplyPreferences(); _navigation.ShowPage(Viewer.State.PageIndex, Sidebar.SelectedIndex == 1 && _settings.SidebarVisible); }
     private void OnDarkMode(object sender, RoutedEventArgs e) { _settings.DarkMode = DarkMenu.IsChecked; ApplyPreferences(); _navigation.RefreshThumbnails(); }

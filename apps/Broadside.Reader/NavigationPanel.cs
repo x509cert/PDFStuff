@@ -18,6 +18,8 @@ internal sealed class NavigationPanel(PdfView viewer, TreeView outline, ListBox 
     private int _page = -1;
     private bool _visible;
     private int _generation;
+    private int _firstVisible;
+    private int _visibleCount = 1;
     private readonly HashSet<int> _pictures = [];
 
     public void SetSession(DocumentSession? session)
@@ -27,6 +29,8 @@ internal sealed class NavigationPanel(PdfView viewer, TreeView outline, ListBox 
         _session = session;
         _generation++;
         _page = -1;
+        _firstVisible = 0;
+        _visibleCount = 1;
         _pictures.Clear();
         _items = [];
         outline.ItemsSource = null;
@@ -53,10 +57,24 @@ internal sealed class NavigationPanel(PdfView viewer, TreeView outline, ListBox 
             _pages.ScrollIntoView(_items[page]);
         }
 
-        RefreshThumbnails();
+        RefreshThumbnails(false);
     }
 
-    public void RefreshThumbnails()
+    public void ShowThumbnails(int first, int count)
+    {
+        if (_firstVisible == first && _visibleCount == count)
+        {
+            return;
+        }
+
+        _firstVisible = Math.Max(0, first);
+        _visibleCount = Math.Max(1, count);
+        RefreshThumbnails(false);
+    }
+
+    public void RefreshThumbnails() => RefreshThumbnails(true);
+
+    private void RefreshThumbnails(bool invalidate)
     {
         Cancel(ref _rendering);
         if (_session is not { } session || !_visible || _items.Length == 0)
@@ -64,18 +82,23 @@ internal sealed class NavigationPanel(PdfView viewer, TreeView outline, ListBox 
             return;
         }
 
-        int start = Math.Max(0, _page - 3);
-        int end = Math.Min(_items.Length, _page + 4);
+        int start = Math.Clamp(_firstVisible - 1, 0, _items.Length);
+        int end = (int)Math.Min(_items.Length, (long)_firstVisible + _visibleCount + 1);
         foreach (int old in _pictures.ToArray())
         {
-            _items[old].Image = null;
+            if (invalidate || old < start || old >= end)
+            {
+                _items[old].Image = null;
+                _pictures.Remove(old);
+            }
         }
 
-        _pictures.Clear();
         _rendering = new CancellationTokenSource();
         CancellationToken token = _rendering.Token;
         int generation = _generation;
-        int[] nearby = Enumerable.Range(start, end - start).OrderBy(index => Math.Abs(index - _page)).ToArray();
+        int[] nearby = Enumerable.Range(start, end - start)
+            .Where(index => !_pictures.Contains(index))
+            .OrderBy(index => Math.Abs(index - _firstVisible)).ToArray();
         _ = RenderAsync(session, generation, nearby, token);
     }
 
